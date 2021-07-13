@@ -26,19 +26,26 @@ class Level:
 
     position = (0, 0)
     orientation = 0
+    gems = []
+    walls = []
 
     def read(self, data):
         lines = data.split("\n")
-        self.position = (int(lines[0].split(",")[0]),
-                         int(lines[0].split(",")[1]))
-        self.orientation = int(lines[1])
+        print(lines)
+        self.position = eval(lines[0])
+        self.orientation = eval(lines[1])
+        if len(lines) >= 3:
+            self.gems = eval(lines[2])
+        if len(lines) >= 4:
+            self.walls = eval(lines[3])
 
 
 running = False
 orientation = 0
 screen = None
 level = Level()
-gems = [(1, 1)]
+gems = []
+walls = []
 carrying = False
 
 width = 600
@@ -100,7 +107,8 @@ def turnRight():
 
 
 def move():
-
+    if(isInFrontOfWall()):
+        raise Exception("Der Charakter stand vor einer Wand.")
     global positionX
     global positionY
     rotation = orientation % 4
@@ -125,6 +133,28 @@ def redraw():
     for x in range(0, width, 50):
         for y in range(0, width, 50):
             screen.blit(backgroundimage, (x, y))
+
+    # Walls
+    for wall in walls:
+        w = 50
+        h = 50
+        x = wall[0][0] * tileSize
+        y = wall[0][1] * tileSize
+        if wall[1] == "r":
+            w = tileSize / 10
+            h = tileSize
+            x = x + tileSize
+        elif wall[1] == "u":
+            w = tileSize
+            h = tileSize / 10
+        elif wall[1] == "l":
+            w = tileSize / 10
+            h = tileSize
+        elif wall[1] == "d":
+            w = tileSize
+            h = tileSize / 10
+            y = y + tileSize
+        pyg.draw.rect(screen, (255, 255, 255), (x, y, w, h))
 
     # Gems
     for gem in gems:
@@ -160,15 +190,20 @@ def load(index):
     global positionX
     global positionY
     global orientation
+    global gems
+    global walls
     filename = "Level" + str(index) + ".lvl"
     with open(filename) as file:
         content = file.read()
+        print(content)
         l = Level()
         l.read(content)
         level = l
         positionX = l.position[0]
         positionY = l.position[1]
         orientation = l.orientation
+        gems = l.gems
+        walls = l.walls
     redraw()
 
 
@@ -177,14 +212,10 @@ def pickUp():
     global carrying
     if(carrying):
         raise Exception("Der Charakter trägt schon etwas.")
-    i = False
-    for gem in gems:
-        if (positionX, positionY) == gem:
-            i = True
-            carrying = True
-            gems.remove(gem)
-            break
-    if(not i):
+    if(isOnGem()):
+        carrying = True
+        gems.remove((positionX, positionY))
+    else:
         raise Exception(
             "An der Position des Charakters gab es nichts zum Aufheben.")
     redraw()
@@ -193,12 +224,7 @@ def pickUp():
 def drop():
     global gems
     global carrying
-    i = False
-    for gem in gems:
-        if (positionX, positionY) == gem:
-            i = True
-            break
-    if(i):
+    if(isOnGem()):
         raise Exception("An dem Ort lag schon etwas.")
     if(carrying):
         gems.append((positionX, positionY))
@@ -206,3 +232,38 @@ def drop():
     else:
         raise Exception("Der Charakter hatte nichts aufgehoben.")
     redraw()
+
+
+def isOnGem():
+    return (positionX, positionY) in gems
+
+
+def isInFrontOfWall():
+    return (((positionX, positionY), orientationToLetter(orientation)) in walls) or (((positionX + orientationToVector(orientation)[0], positionY + orientationToVector(orientation)[1]), orientationToLetter(orientation - 2))) in walls
+
+
+def orientationToLetter(orientation):
+    rotation = orientation % 4
+    if(rotation == 0):
+        return "u"
+    elif(rotation == 1):
+        return "l"
+    elif(rotation == 2):
+        return "d"
+    elif(rotation == 3):
+        return "r"
+
+
+def orientationToVector(orientation):
+    rotation = orientation % 4
+    positionX = 0
+    positionY = 0
+    if(rotation == 0):
+        positionY = positionY - 1
+    elif(rotation == 1):
+        positionX = positionX - 1
+    elif(rotation == 2):
+        positionY = positionY + 1
+    else:
+        positionX = positionX + 1
+    return (positionX, positionY)
