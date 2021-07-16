@@ -1,23 +1,16 @@
 import game as Game
 
 Game.start()
-Game.load(1)
+Game.load(2)
 print("Started")
-Game.turnLeft()
-print(Game.isInFrontOfWall())
 Game.pause()
-Game.move()
 Game.turnLeft()
 Game.move()
-Game.pickUp()
-Game.turnRight()
-Game.turnRight()
-Game.move()
-Game.move()
-Game.drop()
-
-Game.pause()
+print(Game.isOnGoal())
+Game.finish()
 
 
 print("Finished")
+
+
 
